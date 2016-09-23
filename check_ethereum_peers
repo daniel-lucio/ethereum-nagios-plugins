@@ -1,0 +1,80 @@
+#!/bin/sh
+
+while getopts ":H:p:w:c:" opt; do
+	case $opt in
+		H)
+			ethereum_node_ip=$OPTARG
+			;;
+		p)
+			ethereum_node_port=$OPTARG
+			;;
+		w)
+			ethereum_warning=$OPTARG
+			;;
+		c)
+			ethereum_critical=$OPTARG
+			;;
+		\?)      
+			echo "UNKNOWN- Invalid option: -$OPTARG" >&2
+      			exit 3
+      			;;
+    		:)
+	      		echo "UNKNOWN- Option -$OPTARG requires an argument." >&2
+	      		exit 3
+      		;;
+	esac
+done
+
+if [ -z "$ethereum_node_ip" ]; then
+	ethereum_node_ip=localhost
+fi
+
+if [ -z "$ethereum_node_port" ]; then
+	ethereum_node_port=8545
+fi
+
+if [ -z "$ethereum_warning" ]; then
+	ethereum_warning=10
+fi
+
+if [ -z "$ethereum_critical" ]; then
+	ethereum_critical=5
+fi
+
+if [ "$ethereum_critical" -ge "$ethereum_warning" ]; then
+	echo "UNKNOWN- Warning can not be more than Critical"
+	exit 3
+fi
+
+#
+# Get Local Data
+#
+local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":74}')
+if [ $? -ne "0" ]; then
+	echo "UNKNOWN- Could not fetch local peers state"
+	exit 3
+fi
+declare -A loca_larray
+while IFS="=" read -r key value
+do
+    local_array[$key]="$value"
+done < <(echo $local_json |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
+
+peers16=${local_array[result]}
+peers10=$((peers16))
+
+output="peers = $peers10"
+
+if [ "$peers10" -gt "$ethereum_warning" ]; then
+	echo "OK- $output"
+	exit 0
+elif [ "$peers10" -le "$ethereum_warning" ] && [ "$peers10" -gt "$ethereum_critical" ]; then
+	echo "WARNING- $output"
+	exit 1
+elif [ "$peers10" -le "$ethereum_critical" ]; then
+	echo "CRITICAL- $output"
+	exit 2
+else
+	echo "UNKNOWN- $output"
+	exit 3
+fi
