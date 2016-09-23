@@ -3,29 +3,25 @@
 while getopts ":H:p:w:c:" opt; do
 	case $opt in
 		H)
-			echo "-H was triggered, Parameter: $OPTARG" >&2
 			ethereum_node_ip=$OPTARG
 			;;
 		p)
-			echo "-p was triggered, Parameter: $OPTARG" >&2
 			ethereum_node_port=$OPTARG
 			;;
 		w)
-			echo "-w was triggered, Parameter: $OPTARG" >&2
 			ethereum_warning=$OPTARG
 			;;
 		c)
-			echo "-c was triggered, Parameter: $OPTARG" >&2
 			ethereum_critical=$OPTARG
 			;;
 		\?)
       
-			echo "Invalid option: -$OPTARG" >&2
-      			exit 1
+			echo "UNKNOWN- Invalid option: -$OPTARG" >&2
+      			exit 3
       			;;
     		:)
-	      		echo "Option -$OPTARG requires an argument." >&2
-	      		exit 1
+	      		echo "UNKNOWN- Option -$OPTARG requires an argument." >&2
+	      		exit 3
       		;;
 	esac
 done
