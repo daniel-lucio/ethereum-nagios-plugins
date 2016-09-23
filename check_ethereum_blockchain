@@ -1,0 +1,118 @@
+#!/bin/sh
+
+while getopts ":H:p:w:c:" opt; do
+	case $opt in
+		H)
+			echo "-H was triggered, Parameter: $OPTARG" >&2
+			ethereum_node_ip=$OPTARG
+			;;
+		p)
+			echo "-p was triggered, Parameter: $OPTARG" >&2
+			ethereum_node_port=$OPTARG
+			;;
+		w)
+			echo "-w was triggered, Parameter: $OPTARG" >&2
+			ethereum_warning=$OPTARG
+			;;
+		c)
+			echo "-c was triggered, Parameter: $OPTARG" >&2
+			ethereum_critical=$OPTARG
+			;;
+		\?)
+      
+			echo "Invalid option: -$OPTARG" >&2
+      			exit 1
+      			;;
+    		:)
+	      		echo "Option -$OPTARG requires an argument." >&2
+	      		exit 1
+      		;;
+	esac
+done
+
+if [ -z "$ethereum_node_ip" ]; then
+	ethereum_node_ip=localhost
+fi
+
+if [ -z "$ethereum_node_port" ]; then
+	ethereum_node_port=8545
+fi
+
+if [ -z "$ethereum_warning" ]; then
+	ethereum_warning=5
+fi
+
+if [ -z "$ethereum_critical" ]; then
+	ethereum_critical=10
+fi
+
+if [ "$ethereum_warning" -gt "$ethereum_critical" ]; then
+	echo "UNKNOWN- Warning can not be greater than Critical"
+	exit 3
+fi
+
+#
+# Get Local Data
+#
+local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}')
+if [ $? -ne "0" ]; then
+	echo "UNKNOWN- Could not local fetch information"
+	exit 3
+fi
+
+declare -A localarray
+while IFS="=" read -r key value
+do
+    local_array[$key]="$value"
+done < <(echo $local_json |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
+
+local_blockchain16=${local_array[result]}
+local_blockchain10=$(($local_blockchain16))
+
+#
+# Get Remote Data
+#
+remote_json=$(curl https://etherchain.org/api/blocks/count -sSf )
+if [ $? -ne "0" ]; then
+	echo "UNKNOWN- Could not remote fetch information"
+	exit 3
+fi
+
+declare -A remote_array
+while IFS="=" read -r key value
+do
+    remote_array[$key]="$value"
+done < <(echo $remote_json |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
+
+global_blockchain_dirty_data=${remote_array[data]}
+global_blockchain_clean_data=$(echo "$global_blockchain_dirty_data" | sed -r 's/\[+//g' | sed -r 's/\]+//g')
+
+declare -A remote_array2
+while IFS="=" read -r key value
+do
+    remote_array2[$key]="$value"
+done < <(echo $global_blockchain_clean_data |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
+
+#for key in "${!remote_array2[@]}"
+#do
+#    echo "$key = ${remote_array2[$key]}"
+#done
+
+global_blockchain10=${remote_array2[count]}
+
+diff=$(expr $global_blockchain10 - $local_blockchain10)
+output="local block chain = $local_blockchain10, global block chain = $global_blockchain10"
+
+if [ "$diff" -lt "$ethereum_warning" ]; then
+	echo "OK- $output"
+	exit 0
+elif [ "$diff" -ge "$ethereum_warning" ] && [ "$diff" -lt "$ethereum_critical" ]; then
+	echo "WARNING- $output"
+	exit 1
+elif [ "$diff" -ge "$ethereum_critical" ]; then
+	echo "CRITICAL- $output"
+	exit 2
+else
+	echo "UNKNOWN- $output"
+	exit 3
+fi
