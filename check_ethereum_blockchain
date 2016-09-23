@@ -56,7 +56,7 @@ fi
 #
 local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}')
 if [ $? -ne "0" ]; then
-	echo "UNKNOWN- Could not local fetch information"
+	echo "UNKNOWN- Could not fetch local information"
 	exit 3
 fi
 
@@ -74,7 +74,7 @@ local_blockchain10=$(($local_blockchain16))
 #
 remote_json=$(curl https://etherchain.org/api/blocks/count -sSf )
 if [ $? -ne "0" ]; then
-	echo "UNKNOWN- Could not remote fetch information"
+	echo "UNKNOWN- Could not fetch remote information"
 	exit 3
 fi
 
