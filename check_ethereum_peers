@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Author: Luis Daniel Lucio Quiroz <dlucio@okay.com.mx>
+#
 
 while getopts ":H:p:w:c:" opt; do
 	case $opt in
