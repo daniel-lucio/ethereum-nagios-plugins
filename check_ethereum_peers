@@ -52,7 +52,7 @@ fi
 #
 # Get Local Data
 #
-local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":74}')
+local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":74}' -H "Content-Type: application/json")
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch local peers state"
 	exit 3
