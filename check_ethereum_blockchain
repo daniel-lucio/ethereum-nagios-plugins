@@ -53,7 +53,7 @@ fi
 #
 # Get Local Data
 #
-local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}')
+local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}' -H "Content-Type: application/json")
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch local information"
 	exit 3
