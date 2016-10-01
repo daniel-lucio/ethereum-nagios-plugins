@@ -52,7 +52,7 @@ fi
 #
 # Get Local Data
 #
-local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_mining","params":[],"id":71}')
+local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_mining","params":[],"id":71}' -H "Content-Type: application/json")
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch local mining state"
 	exit 3
@@ -71,7 +71,7 @@ if [ $is_mining == "false" ]; then
 	exit 2
 fi
 
-local_json2=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_hashrate","params":[],"id":71}')
+local_json2=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_hashrate","params":[],"id":71}' -H "Content-Type: application/json")
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch local mining state"
 	exit 3
