@@ -18,7 +18,7 @@ while getopts ":H:p:w:c:" opt; do
 			ethereum_critical=$OPTARG
 			;;
 		\?)
-      
+
 			echo "UNKNOWN- Invalid option: -$OPTARG" >&2
       			exit 3
       			;;
@@ -59,7 +59,7 @@ if [ $? -ne "0" ]; then
 	exit 3
 fi
 
-declare -A loca_larray
+declare -A local_array
 while IFS="=" read -r key value
 do
     local_array[$key]="$value"
