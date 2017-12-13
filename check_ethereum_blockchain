@@ -71,36 +71,14 @@ local_blockchain10=$(($local_blockchain16))
 #
 # Get Remote Data
 #
-remote_json=$(curl https://etherchain.org/api/blocks/count -sSf )
+remote_count=$(curl https://www.etherchain.org/api/blocks/count -sSf | jq -r ".count" )
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch remote information"
 	exit 3
 fi
 
-declare -A remote_array
-while IFS="=" read -r key value
-do
-    remote_array[$key]="$value"
-done < <(echo $remote_json |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
-
-global_blockchain_dirty_data=${remote_array[data]}
-global_blockchain_clean_data=$(echo "$global_blockchain_dirty_data" | sed -r 's/\[+//g' | sed -r 's/\]+//g')
-
-declare -A remote_array2
-while IFS="=" read -r key value
-do
-    remote_array2[$key]="$value"
-done < <(echo $global_blockchain_clean_data |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
-
-#for key in "${!remote_array2[@]}"
-#do
-#    echo "$key = ${remote_array2[$key]}"
-#done
-
-global_blockchain10=${remote_array2[count]}
-
-diff=$(expr $global_blockchain10 - $local_blockchain10)
-output="local block chain = $local_blockchain10, global block chain = $global_blockchain10"
+diff=$(expr $remote_count - $local_blockchain10)
+output="local block chain = $local_blockchain10, global block chain = $remote_count | local=$local_blockchain10, global=$remote_count"
 
 if [ "$diff" -lt "$ethereum_warning" ]; then
 	echo "OK- $output"
