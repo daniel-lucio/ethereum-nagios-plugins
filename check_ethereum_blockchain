@@ -71,7 +71,7 @@ local_blockchain10=$(($local_blockchain16))
 #
 # Get Remote Data
 #
-remote_count=$(curl https://www.etherchain.org/api/blocks/count -sSf | jq -r ".count" )
+remote_count=$(curl https://api.blockchair.com/ethereum -sSf | jq -r ".[0].mempool_best_block")
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch remote information"
 	exit 3
