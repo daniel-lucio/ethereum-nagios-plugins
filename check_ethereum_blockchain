@@ -18,7 +18,7 @@ while getopts ":H:p:w:c:" opt; do
 			ethereum_critical=$OPTARG
 			;;
 		\?)
-
+      
 			echo "UNKNOWN- Invalid option: -$OPTARG" >&2
       			exit 3
       			;;
@@ -53,59 +53,24 @@ fi
 #
 # Get Local Data
 #
-local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}' -H "Content-Type: application/json")
+local_json=$(curl http://$ethereum_node_ip:$ethereum_node_port -sSf -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}' -H "Content-Type: application/json" | jq -r ".result")
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch local information"
 	exit 3
 fi
-
-declare -A local_array
-while IFS="=" read -r key value
-do
-    local_array[$key]="$value"
-done < <(echo $local_json |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
-
-local_blockchain16=${local_array[result]}
-local_blockchain10=$(($local_blockchain16))
+local_blockchain10=$(($local_json))
 
 #
 # Get Remote Data
 #
-remote_json=$(curl https://etherchain.org/api/blocks/count -sSfL )
+remote_count=$(curl https://api.blockchair.com/ethereum -sSf | jq -r ".[0].mempool_best_block")
 if [ $? -ne "0" ]; then
 	echo "UNKNOWN- Could not fetch remote information"
 	exit 3
 fi
 
-declare -A remote_array
-while IFS="=" read -r key value
-do
-    remote_array[$key]="$value"
-done < <(echo $remote_json |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
-
-global_blockchain10=${remote_array[count]}
-
-###
-# remove for new etherchain.org api response
-#global_blockchain_dirty_data=${remote_array[data]}
-#global_blockchain_clean_data=$(echo "$global_blockchain_dirty_data" | sed -r 's/\[+//g' | sed -r 's/\]+//g')
-#
-#declare -A remote_array2
-#while IFS="=" read -r key value
-#do
-#    remote_array2[$key]="$value"
-#done < <(echo $global_blockchain_clean_data |jq -r "to_entries|map(\"\(.key)=\(.value)\")|.[]" -)
-#
-##for key in "${!remote_array2[@]}"
-##do
-##    echo "$key = ${remote_array2[$key]}"
-##done
-#
-#global_blockchain10=${remote_array2[count]}
-###
-
-diff=$(expr $global_blockchain10 - $local_blockchain10)
-output="local block chain = $local_blockchain10, global block chain = $global_blockchain10"
+diff=$(expr $remote_count - $local_blockchain10)
+output="local block chain = $local_blockchain10, global block chain = $remote_count | local=$local_blockchain10, global=$remote_count"
 
 if [ "$diff" -lt "$ethereum_warning" ]; then
 	echo "OK- $output"
